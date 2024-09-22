@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Graph</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            box-sizing: border-box;
+        }
+
+        main{
+            padding: 15px;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgb(255, 255, 255);
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            width: 120px;
+            height: 60px;
+        }
+
+        header h1 {
+            flex: 1;
+            text-align: center;
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        
+        .options-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .options-container label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .options-container select,
+        .options-container input {
+            padding: 10px;
+            font-size: 1em;
+        
+            border: 1px solid #ccc;
+            margin: 0 10px;
+            outline: none;
+            max-width: 250px;
+        }
+
+        .options-container select:focus,
+        .options-container input:focus {
+            border-color: #4285F4;
+            box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+        }
+
+        .options-container, .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            background-color: rgb(24, 71, 159);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            max-width: 200px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            max-width: 800px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="logo.png" alt="JSW">
+        <h1>REPORT GRAPH</h1>
+    </header>
+<main>
+    <div class="options-container">
+        <label for="graphType">Select Graph Type:</label>
+        <select id="graphType" onchange="renderChart()">
+            <option value="bar">Bar</option>
+            <option value="line">Line</option>
+        </select>
+        <label for="graphTitle">Graph Title:</label>
+        <input type="text" id="graphTitle" placeholder="Enter title" oninput="renderChart()"/>
+    </div>
+
+    <div class="button-container">
+        <button onclick="updateGraphs('all')">All Zones</button>
+        <button onclick="updateGraphs('Z1')">Z1</button>
+        <button onclick="updateGraphs('Z2')">Z2</button>
+        <button onclick="updateGraphs('Z3')">Z3</button>
+        <button onclick="updateGraphs('Z5')">Z5</button>
+        <button onclick="updateGraphs('Z6')">Z6</button>
+    </div>
+
+    <div class="button-container">
+        <button onclick="updateIssues('all')">All Issues</button>
+        <button onclick="updateIssues('BD')">BD</button>
+        <button onclick="updateIssues('SC')">SC</button>
+        <button onclick="updateIssues('PM')">PM</button>
+        <button onclick="updateIssues('INSP')">INSP</button>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+
+    <div class="button-container">
+        <button onclick="window.location.href='table.html'">Previous</button>
+        <button onclick="downloadGraph()">Download</button>
+    </div>
+</main>
+    <script>
+        let chart;
+        let currentZone = 'all';
+        let currentIssue = 'all';
+
+        const zoneColors = {
+            'all': '#4285F4',
+            'Z1': '#34A853',
+            'Z2': '#FBBC05',
+            'Z3': '#EA4335',
+            'Z5': '#0F9D58',
+            'Z6': '#F4B400'
+        };
+
+        const issueColors = {
+            'all': '#4285F4',
+            'BD': '#34A853',
+            'SC': '#FBBC05',
+            'PM': '#EA4335',
+            'INSP': '#0F9D58'
+        };
+
+        window.onload = function() {
+            renderChart();
+        };
+
+        function updateGraphs(zone) {
+            currentZone = zone;
+            renderChart();
+        }
+
+        function updateIssues(issue) {
+            currentIssue = issue;
+            renderChart();
+        }
+
+        function renderChart() {
+            const reports = JSON.parse(localStorage.getItem("reports")) || [];
+            const filteredReports = reports.filter(report => {
+                const zoneMatch = currentZone === 'all' || report.zone === currentZone;
+                const issueMatch = currentIssue === 'all' || report.issue === currentIssue;
+                return zoneMatch && issueMatch;
+            });
+
+            const labels = [];
+            const durationData = [];
+            const dateDurationMap = {};
+
+            filteredReports.forEach(report => {
+                const dateParts = report.date.split("-");
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                const startTime = new Date(`1970-01-01T${report.startTime}:00`);
+                const endTime = new Date(`1970-01-01T${report.endTime}:00`);
+                const duration = Math.abs(endTime - startTime) / 1000; // Duration in seconds
+
+                if (!dateDurationMap[formattedDate]) {
+                    dateDurationMap[formattedDate] = 0;
+                }
+                dateDurationMap[formattedDate] += duration;
+            });
+
+            for (const date in dateDurationMap) {
+                labels.push(date);
+                durationData.push(dateDurationMap[date]);
+            }
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const graphType = document.getElementById('graphType').value;
+            const graphTitle = `${document.getElementById('graphTitle').value || 'Report Graph'} - Zones: ${currentZone}, Issues: ${currentIssue}`;
+
+            const selectedColor = currentZone === 'all' ? issueColors[currentIssue] : zoneColors[currentZone];
+
+            chart = new Chart(ctx, {
+                type: graphType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: graphTitle,
+                        data: durationData,
+                        backgroundColor: selectedColor,
+                        borderColor: 'transparent',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatDuration(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    const durationInSeconds = tooltipItem.raw;
+                                    return `Duration: ${formatDuration(durationInSeconds)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function downloadGraph() {
+            const originalCanvas = document.getElementById('myChart');
+            const ctx = originalCanvas.getContext('2d');
+
+            const downloadCanvas = document.createElement('canvas');
+            downloadCanvas.width = originalCanvas.width;
+            downloadCanvas.height = originalCanvas.height;
+            const downloadCtx = downloadCanvas.getContext('2d');
+
+            downloadCtx.fillStyle = '#ffffff';
+            downloadCtx.fillRect(0, 0, downloadCanvas.width, downloadCanvas.height);
+
+            // Temporarily hide the title
+            const tempTitle = chart.options.plugins.title.text;
+            chart.options.plugins.title.text = '';
+
+            chart.update();
+
+            downloadCtx.drawImage(originalCanvas, 0, 0);
+
+            chart.options.plugins.title.text = tempTitle;
+            chart.update();
+
+            const link = document.createElement('a');
+            link.href = downloadCanvas.toDataURL('image/png');
+            link.download = 'report_graph.png';
+            link.click();
+        }
+    </script>
+</body>
+</html>

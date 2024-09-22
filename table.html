@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Data Table</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+        }
+        main{
+            padding: 15px;
+        }
+        
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgb(255, 255, 255);
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            width: 120px;
+            height: 60px;
+        }
+
+        header h1 {
+            flex: 1;
+            text-align: center;
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden; /* For rounded corners */
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #ffffff;
+            color: rgb(0, 0, 0);
+            border: none;
+            background-color: rgb(24, 71, 159);
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            color: #fff;
+        }
+
+        .button-container {
+            display: flex; /* Use flexbox for button alignment */
+            justify-content: center; /* Center the buttons */
+            gap: 10px; /* Space between buttons */
+            margin: 20px 0; /* Space above and below */
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5em; /* Smaller heading on mobile */
+            }
+
+            th, td {
+                padding: 8px; /* Smaller padding */
+            }
+
+            button {
+                font-size: 0.9em; /* Smaller buttons */
+                width: auto; /* Auto width for buttons */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="logo.png" alt="JSW">
+        <h1>REPORT DATE TABLE</h1>
+    </header>
+<main>
+    <table>
+        <thead>
+            <tr>
+                <th>Week</th>
+                <th>Date</th>
+                <th>Zone</th>
+                <th>Location</th>
+                <th>Issue</th>
+                <th>Starting Time</th>
+                <th>Ending Time</th>
+                <th>Duration</th> <!-- New Duration Column -->
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody id="dataTableBody">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+    
+    <div class="button-container">
+        <button onclick="window.location.href='index.html'">Previous</button>
+        <button onclick="downloadTable()">Download</button>
+        <button onclick="window.location.href='graph.html'">Next</button>
+    </div>
+</main>
+    <script>
+        window.onload = function() {
+            const reports = JSON.parse(localStorage.getItem("reports")) || [];
+            const tableBody = document.getElementById("dataTableBody");
+
+            reports.forEach(formData => {
+                const row = document.createElement("tr");
+
+                // Format the date to dd/mm/yyyy
+                const dateParts = formData.date.split("-");
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                // Calculate duration
+                const startTime = new Date(`1970-01-01T${formData.startTime}:00`);
+                const endTime = new Date(`1970-01-01T${formData.endTime}:00`);
+                const duration = Math.abs(endTime - startTime); // Duration in milliseconds
+                const durationMinutes = Math.floor((duration / 1000) / 60); // Convert to minutes
+                const durationDisplay = `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`; // Format
+
+                const values = [
+                    formData.week,
+                    formattedDate,
+                    formData.zone,
+                    formData.location,
+                    formData.issue,
+                    formData.startTime,
+                    formData.endTime,
+                    durationDisplay, // Add duration to the values
+                    formData.message
+                ];
+
+                values.forEach(value => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            if (reports.length === 0) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 9; // Adjusted colspan to include the new column
+                cell.textContent = "No data available.";
+                cell.style.textAlign = "center";
+                row.appendChild(cell);
+                tableBody.appendChild(row);
+            }
+        };
+
+        function downloadTable() {
+            const reports = JSON.parse(localStorage.getItem("reports")) || [];
+            let csvContent = "data:text/csv;charset=utf-8,";
+
+            // Header row
+            const headers = ["Week", "Date", "Zone", "Location", "Issue", "Starting Time", "Ending Time", "Duration", "Message"];
+            csvContent += headers.join(",") + "\n";
+
+            reports.forEach(formData => {
+                // Format the date to dd/mm/yyyy
+                const dateParts = formData.date.split("-");
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                // Calculate duration
+                const startTime = new Date(`1970-01-01T${formData.startTime}:00`);
+                const endTime = new Date(`1970-01-01T${formData.endTime}:00`);
+                const duration = Math.abs(endTime - startTime); // Duration in milliseconds
+                const durationMinutes = Math.floor((duration / 1000) / 60); // Convert to minutes
+                const durationDisplay = `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`; // Format
+
+                const values = [
+                    formData.week,
+                    formattedDate,
+                    formData.zone,
+                    formData.location,
+                    formData.issue,
+                    formData.startTime,
+                    formData.endTime,
+                    durationDisplay,
+                    formData.message
+                ];
+
+                csvContent += values.join(",") + "\n";
+            });
+
+            // Create a link to download the CSV
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "report_data.csv");
+            document.body.appendChild(link); // Required for Firefox
+            link.click(); // This will download the data file
+            document.body.removeChild(link); // Remove the link when done
+        }
+    </script>
+</body>
+</html>

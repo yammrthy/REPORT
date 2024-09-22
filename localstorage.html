@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View LocalStorage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        p {
+            text-align: center;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #f9f9f9;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #008604;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #clear-btn {
+            background-color: #bc0d00;
+        }
+
+        #clear-btn:hover {
+            background-color: #e53935;
+        }
+
+        /* Make buttons container flexible */
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            #output {
+                width: 90%;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            button {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            .button-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2>Manage Your Local Storage Data</h2>
+<p>Click the buttons below to view or clear the data stored in your browser's localStorage.</p>
+
+<div class="button-container">
+    <button onclick="showLocalStorage()">Show Stored Data</button>
+    <button id="clear-btn" onclick="clearLocalStorage()">Clear All Data</button>
+</div>
+
+<div id="output">
+    <!-- LocalStorage data will be shown here -->
+</div>
+
+<script>
+    function showLocalStorage() {
+        // Get the output div
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = ""; // Clear previous output
+
+        // Check if localStorage is empty
+        if (localStorage.length === 0) {
+            outputDiv.innerHTML = "<strong>No data found in localStorage.</strong> Add data to see it here.";
+            return;
+        }
+
+        // Create a table for displaying localStorage data
+        let table = `
+            <h3>Your Stored Data:</h3>
+            <table>
+                <tr>
+                    <th>Data Key</th>
+                    <th>Stored Value</th>
+                </tr>
+        `;
+
+        // Loop through localStorage and display key-value pairs in the table
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            let value = localStorage.getItem(key);
+            table += `<tr><td>${key}</td><td>${value}</td></tr>`;
+        }
+
+        table += "</table>";
+
+        // Insert the table into the output div
+        outputDiv.innerHTML = table;
+    }
+
+    function clearLocalStorage() {
+        // Clear localStorage
+        localStorage.clear();
+
+        // Show confirmation message
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = "<strong>All data has been successfully cleared from localStorage.</strong>";
+    }
+</script>
+
+</body>
+</html>
